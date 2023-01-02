@@ -1,0 +1,22 @@
+---
+title: "NBA dataset"
+author: "Fungai Jani"
+date: "10/1/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+setwd("~/Desktop/DATA 106/Group Project")
+library(readr)
+NBA <- read_csv("players_stats_by_season_full_details.csv")
+library(dplyr)
+library(tidyr)
+```
+
+```{r}
+NBA_dataset= NBA %>% separate(Season, into = c("StartYear", "EndYear")) %>% mutate(StartYear = as.numeric(StartYear), Age= StartYear - birth_year) %>% mutate(Nationality= ifelse(nationality== "United States", "American", "Not American"))
+
+write.csv(NBA_dataset, "NBA_dataset.csv")
+```
+
