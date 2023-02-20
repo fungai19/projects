@@ -1,0 +1,138 @@
+---
+title: "Project 1"
+author: "Fungai & Helena "
+date: "2023-01-28"
+output: html_document
+---
+
+
+```{r}
+AdmissionData <- read.csv("~/Desktop/DATA325/Project 1/Admissions_Data.csv")
+library(regclass)
+library(ISLR)
+library(tidyverse)
+library(Stat2Data)
+library(mosaic)
+library(ggplot2)
+library(dplyr)
+library(caret)
+
+
+```
+
+##For this proejct we decided to use a logistic regression model to predict if students applied with independent variables WooDist, HH.., Soph and X.PrivHS. 
+```{r}
+
+#Grouping the states by region
+
+AdmissionData$Region <- ifelse(AdmissionData$State %in% c("WA", "OR", "CA", "NV", "AZ", "ID", "MT", "WY", "CO", "NM", "UT"), "West", ifelse(AdmissionData$State %in% c("TX", "OK", "AR", "LA", "MS", "AL", "TN", "KY", "GA", "FL", "SC", "NC", "VA", "WV"), "South", ifelse(AdmissionData$State %in% c("KS", "NE", "SD", "ND", "MN", "MO", "IA", "IL","IN", "MI", "WI", "OH"), "Midwest", "Northeast")))
+```
+
+#Exploratory Data Analysis 
+```{r}
+#To check the summary statistics of our variables. 
+favstats(AdmissionData$HH..)
+favstats(AdmissionData$X.PrivHS)
+table(AdmissionData$Soph)
+table(AdmissionData$Region) #Majority of the students in this dataset are from the midwest. 
+```
+
+```{r}
+applicantYes <- AdmissionData[which(AdmissionData$Applicant=='1'), ]
+title.theme <- theme(plot.title = element_text(face = "bold", size = (12), hjust = 0.5)) 
+stateApplied <- ggplot(data = applicantYes, aes(x = State, y = Applicant, fill = State)) + 
+  geom_bar(stat = "identity")+
+  theme_minimal() + 
+  ggtitle("Number of Students that applied in each State") + 
+  title.theme 
+stateApplied 
+
+regionApplied <- ggplot(data = applicantYes, aes(x = Region, y = Applicant, fill = Region)) + 
+  geom_bar(stat = "identity") +
+  theme_minimal() + 
+  ggtitle("Number of Students that applied in each region") + 
+  title.theme 
+regionApplied 
+
+incomeApplied <- ggplot(data = applicantYes, aes(x = Applicant, y = HH.., fill = Applicant)) + 
+  geom_boxplot() + 
+  theme_minimal() + 
+  ggtitle("Income of students that applied") + 
+  title.theme 
+incomeApplied
+```
+
+```{r}
+#To see the relationship between applicant and soph.
+table(AdmissionData$Applicant, AdmissionData$Soph)
+```
+
+```{r}
+#Splitting 75% of the dataset to a train dataset and the other 25% to test.
+
+training_proportion <- 0.75
+n <- nrow(AdmissionData)
+training_rows <- round(n * training_proportion)
+training_indices <- sample(1:n, training_rows)
+
+train <- AdmissionData[training_indices, ]
+
+# Extract the test set from the data set
+test <- AdmissionData[-training_indices, ]
+
+```
+#Making the logistic regression model
+```{r}
+model1 <- glm(Applicant ~ WooDist,data = train)
+summary(model1)
+```
+
+```{r}
+model2 <- glm(Applicant ~ HH..,data = train ,family=binomial)
+summary(model2)
+```
+
+```{r}
+model3 <- glm(Applicant ~ X.PrivHS,data = train ,family=binomial)
+summary(model3)
+```
+
+```{r}
+model4 <- glm(Applicant ~ WooDist + HH.. + X.PrivHS,data = train ,family=binomial)
+summary(model4)
+```
+
+```{r}
+model5 <- glm(Applicant ~ WooDist + HH.. + X.PrivHS + MajorCode,data = train ,family=binomial)
+summary(model5)
+```
+
+```{r}
+model6 <- glm(Applicant ~ WooDist + HH.. + X.PrivHS  + Region,data = train ,family=binomial)
+#summary(model6)
+anova(model6, test="Chisq")
+```
+
+```{r}
+model7 <- glm(Applicant ~ WooDist + HH.. + X.PrivHS + Soph  + Region,data = train ,family= "binomial")
+summary(model7)
+anova(model7, test="Chisq")
+```
+#Testing the accuracy of the model
+
+```{r}
+actual <- test$Applicant
+predictions = ifelse(predict(model7, newdata = test, type= "response")> 0.5, 1, 0)
+
+actual <- factor(actual)
+predictions <- factor(predictions, levels = levels(actual))
+
+accuracy <- table(actual, predictions)
+accuracy
+```
+#The accuracy of the model is 99%
+
+```{r}
+exp(confint(model7))
+```
+
