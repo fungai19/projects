@@ -1,0 +1,163 @@
+---
+title: "FPL Project"
+author: "Fungai Jani"
+date: '2022-11-02'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(ISLR)
+library(tidyverse)
+library(Stat2Data)
+library(mosaic)
+library(ggplot2)
+
+library(readr)
+fpl <- read_csv("FPL 20 21.csv")
+```
+
+```{r}
+##Players that play 0 minutes will have 0 points so it is best we remove these players and only considers players that have played
+fpl<-fpl[!(fpl$Minutes==0 ),]
+fpl
+
+fplcor <- select(fpl, Total_Points, Minutes, Goals_Scored, BPS, Yellow_Cards, Influence)
+```
+
+##Number statistics for the response variable and the possible predictor variables
+```{r}
+favstats(fpl$Total_Points)
+```
+
+```{r}
+favstats(fpl$Influence)
+```
+
+```{r}
+favstats(fpl$ICT_Index)
+```
+
+```{r}
+favstats(fpl$Minutes)
+```
+
+
+```{r}
+favstats(fpl$BPS)
+```
+
+```{r}
+favstats(fpl$Goals_Scored)
+```
+
+
+```{r}
+favstats(fpl$Assists)
+```
+
+```{r}
+favstats(fpl$Yellow_Cards)
+```
+
+
+```{r}
+##Histogram to see the distribution of the points scored in the dataset 
+gf_histogram(~Total_Points, data = fpl) + ggtitle("Distribution of Total Points")+ xlab("Total Points")+
+  ylab("Count")+
+  labs(caption = "Data used to create this scatterplot was taken from kaggle.com", subtitle = "FPL 2020/2021 Season")
+```
+#Checking the relationship between predictor and response variables using scatterplots
+
+```{r}
+
+ggplot(data = fpl, aes(x = Influence, y= Total_Points)) + geom_point(shape = 23) + ggtitle("Relationship between Influence and Total Points")+ xlab("Influence")+
+  ylab("Total Points")+
+  labs(caption = "Data used to create this scatterplot was taken from kaggle.com", subtitle = "FPL 2020/2021 Season")
+```
+
+```{r}
+gf_point(Total_Points~ ICT_Index, data=fpl)
+```
+
+
+```{r}
+gf_point(Total_Points~ Goals_Scored, data=fpl)
+```
+
+```{r}
+gf_point(Total_Points~ Minutes, data=fpl)
+```
+
+
+##I decided to see the total points scored by each position, to  see which position produces the most fantasy points.
+
+```{r}
+FPL = fpl %>% group_by(Position)  %>% summarise(total_points =mean(Total_Points), influence = mean(Influence))
+FPL
+```
+##Seeing correlation between different variables such as minutes and goals scored for an interaction term
+```{r}
+
+cor.test(Minutes ~ Goals_Scored, data = fpl)
+```
+
+```{r}
+cor.test(Minutes ~ Assists, data = fpl)
+```
+
+```{r}
+cor.test(Minutes ~ Influence, data = fpl)
+#high correlation between minutes and influence
+```
+```{r}
+cor.test(Total_Points ~ Influence, data = fpl)
+```
+```{r}
+fpl1.lm <- lm(Total_Points~ Influence + Minutes + Goals_Scored,  data = fpl)
+summary(fpl1.lm)
+```
+
+```{r}
+anova(fpl1.lm)
+```
+
+```{r}
+fpl2.lm <- lm(Total_Points~ Influence + Minutes + Goals_Scored * Assists + BPS,  data = fpl)
+summary(fpl2.lm)
+```
+
+```{r}
+fpl3.lm <- lm(Total_Points~ Minutes + Goals_Scored + Assists + BPS,  data = fpl)
+summary(fpl3.lm)
+```
+```{r}
+fpl4.lm <- lm(Total_Points~ Influence*Minutes + Goals_Scored + Assists + BPS + Yellow_Cards,  data = fpl)
+summary(fpl4.lm)
+```
+```{r}
+fpl5.lm <- lm(Total_Points~ Influence + Minutes + Goals_Scored + Assists + BPS + Yellow_Cards + Influence*Position,  data = fpl)
+summary(fpl5.lm)
+```
+
+```{r}
+confint(fpl5.lm, level=.95)
+```
+
+```{r}
+cor(fplcor)
+```
+
+```{r}
+anova(fpl5.lm)
+```
+
+```{r}
+cor.test(Total_Points ~ Yellow_Cards, data = fpl)
+```
+
+```{r}
+plot(fpl5.lm)
+```
+
